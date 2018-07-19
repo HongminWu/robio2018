@@ -119,9 +119,9 @@ def run(X=None, X_filtered=None, y=None):
     '''
     
     # analyse with variable methods
-    train_data = [X_train, X_filtered_train] 
-    test_data  = [X_test, X_filtered_test]
-    data_type  = ['X_train', 'X_filtered_train']
+    train_data = [X_filtered_train] 
+    test_data  = [X_filtered_test]
+    data_type  = ['X_filtered_train']
 
 #----------------------------------------------------------------------------------------------------------------------------------------
  
@@ -139,25 +139,26 @@ def run(X=None, X_filtered=None, y=None):
             _polynomialKernelSVMClassifier(train, test, y_train, y_test))
         pre_rec_fc.append( _knnDTWClassifier(train, test, y_train, y_test))
             
-        func_name = [ _decisionTreeClassifier.__name__,
-                          _naiveBayesClassifier.__name__,
-                          _linearSVMClassifier.__name__,
-                          _polynomialKernelSVMClassifier.__name__,
-                          _knnDTWClassifier.__name__,
+        func_name = [ 'DecisionTree',
+                          'NaiveBayes',
+                          'LinearSVM',
+                          'PolynomialSVM',
+                          'KNN+DTW',
                     ]
         fig, ax = plt.subplots()
         fig.patch.set_facecolor('white')
-        xs = np.arange(1, len(func_name)+1)
-        pre_rec_fc = np.array(pre_rec_fc) 
-        plt.bar(xs - .3, pre_rec_fc[:,0], width=.2, label='Precision', color='darkorange')
-        plt.bar(xs - .1, pre_rec_fc[:,1], width=.2, label='Recall', color='navy')
-        plt.bar(xs + .1, pre_rec_fc[:,2], width=.2, label='Fscore', color='c')
-        fontsize = 16
+        xs = np.arange(len(func_name))
+        pre_rec_fc = np.array(pre_rec_fc)
+        w = 0.3
+        fontsize = 12
+        plt.bar(xs - w/2.0 - w, pre_rec_fc[:,0], width=w, label='Precision', color='darkorange')
+        plt.bar(xs - w/2.0,     pre_rec_fc[:,1],     width=w, label='Recall', color='navy')
+        plt.bar(xs + w/2.0,     pre_rec_fc[:,2],     width=w, label='Fscore', color='c')
         plt.ylabel('Precision-Recall-Fscore (%)', fontsize=fontsize)
         plt.yticks(fontsize=fontsize)        
         plt.xlabel('Classifier', fontsize=fontsize)
-        plt.xticks(xs, func_name,fontsize=fontsize)
-        plt.legend(loc='upper right')
+        plt.xticks(xs, func_name,fontsize=fontsize-2)
+        plt.legend(bbox_to_anchor = (0., 1.02, 1.0, 0.102), loc=3, ncol=3, mode='expand', borderaxespad=0.)
         plt.savefig('pre_rec_fc_by_classifiers.eps', format='eps', dpi=1000)
         plt.show()
             
