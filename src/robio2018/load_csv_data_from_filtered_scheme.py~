@@ -1,0 +1,10 @@
+import coloredlogs, logging
+import glob
+
+
+
+coloredlogs.install()
+def run():
+    logger = logging.getLogger()
+    logger.info("load_csv_data_from_filtered_scheme")
+    folders = 
