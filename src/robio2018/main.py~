@@ -1,0 +1,180 @@
+# http://sujitpal.blogspot.com/2013/05/feature-selection-with-scikit-learn.html
+# https://www.fabienplisson.com/choosing-right-features/
+from __future__ import division
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.rcParams.update({'font.size':14})
+import numpy as np
+from sklearn.cross_validation import KFold
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+from sklearn.feature_selection import f_classif
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import RidgeClassifier
+from sklearn.linear_model import SGDClassifier
+from sklearn.metrics import accuracy_score,precision_recall_fscore_support
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.naive_bayes import BernoulliNB
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import LinearSVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from K_Nearest_Neighbors_with_Dynamic_Time_Warping.util import KnnDtw
+import pandas as pd
+import coloredlogs,logging
+import ipdb,sys
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+coloredlogs.install()
+logger = logging.getLogger()
+
+N_FOLDS = 6
+
+def load():
+    X = pd.read_csv('X.csv')
+    try:
+        X = X.drop(['id'],axis=1)
+    except:
+        pass
+    y = pd.read_csv('y.csv', header=None, index_col=None, squeeze=True, usecols=[1])
+    from sklearn import preprocessing
+    le = preprocessing.LabelEncoder()
+    y = le.fit_transform(y.values)
+    
+    return X.values, y
+
+def choosing_right_features(X, y):
+    rfc = RandomForestClassifier()
+    rfc.fit(X, y)
+    df = pd.DataFrame({'feature':range(X.shape[-1]), 'importance':np.round(rfc.feature_importances_,3)})
+    df = df.sort_values('importance', ascending=False).set_index('feature')
+    print ('The first 50 feature importance: %s' % (sum(df['importance'][:50])/sum(df['importance'])))
+    df.plot.bar(rot=1)
+    plt.show()
+    sys.exit()
+
+def evaluate(X, y, nfolds, clf, nfeats, clfname, scoreFunc=None):
+  '''  
+  kfold = KFold(X.shape[0], n_folds=nfolds)
+  acc = 0
+  i = 0
+  logger.warning("%s (#-features=%d)..." % (clfname, nfeats))
+  for train, test in kfold:
+    i += 1
+    #Xtrain, Xtest, ytrain, ytest = X[test], X[train], y[test], y[train]
+    Xtrain, Xtest, ytrain, ytest = X[train], X[test], y[train], y[test]
+    logger.warning('Xtrain.shape%s' % Xtrain.shape[0])
+    logger.warning('Xtest.shape%s' % Xtest.shape[0])    
+    clf.fit(Xtrain, ytrain)
+    ypred = clf.predict(Xtest)
+    score = accuracy_score(ytest, ypred)
+    print "  Fold #%d, accuracy=%f" % (i, score)
+    acc += score
+  acc /= nfolds
+  print "## %s (#-features=%d) accuracy=%f" % (clfname, nfeats, acc)
+  return acc
+  '''
+    
+  Xtrain, Xtest,ytrain,ytest = train_test_split(X, y, test_size=.4,stratify = y, random_state=5)
+  logger.warning("%s (#-features=%d)..." % (clfname, nfeats))  
+  logger.info('Xtrain.shape %s and Xtest.shape %s' % (Xtrain.shape[0],Xtest.shape[0]))
+  clf.fit(Xtrain, ytrain)
+  ypred = clf.predict(Xtest)
+  prfs = precision_recall_fscore_support(ytest,ypred,average='weighted')
+  acc = accuracy_score(ytest, ypred)
+  print acc
+  prf = filter(None, prfs)
+  return acc, prf
+
+def plot_precision_recall_fscore(X, y, clfs, clfnames):
+    nFeatures = X.shape[-1]
+    N_FOLDS = 2
+    pre_rec_fsc = []    
+    for i in range(len(clfs)):
+        _, prf = evaluate(X, y, N_FOLDS, clfs[i], nFeatures, clfnames[i])
+        pre_rec_fsc.append(prf)
+    fig, ax = plt.subplots(figsize=(16,12))
+    fig.patch.set_facecolor('white')
+    pre_rec_fsc = np.array(pre_rec_fsc)
+    pre_rec_fsc =  np.vstack((pre_rec_fsc, pre_rec_fsc.mean(axis=0)))
+    clfnames.append('Average')
+    xs = np.arange(len(clfnames))
+    w = 0.3
+    plt.bar(xs - w/2.0 - w, pre_rec_fsc[:,0],     width=w, label='Precision', color='darkorange')
+    plt.bar(xs - w/2.0,     pre_rec_fsc[:,1],     width=w, label='Recall', color='navy')
+    plt.bar(xs + w/2.0,     pre_rec_fsc[:,2],     width=w, label='Fscore', color='c')
+    plt.ylabel('Precision-Recall-Fscore (%)')
+    plt.xlim(xs[0] - w/2.0 - w-.1, xs[-1]+ w/2.0 + w + .1)
+    plt.xlabel('Classifier')
+    plt.xticks(xs, clfnames, rotation=30)
+    plt.legend(bbox_to_anchor = (0., 1.02, 1.0, 0.102), loc=3, ncol=3, mode='expand', borderaxespad=0.)
+    plt.savefig('pre_rec_fsc_acc_by_classifiers.eps', format='eps', dpi=1000)
+    plt.show()
+    sys.exit()
+
+def plot(accuracies, xvals, legends):
+  fig = plt.figure(figsize=(12,8))
+  fig.patch.set_facecolor('white')  
+  ax = fig.add_subplot(111)
+  cm = [color + marker
+    for color in ["b", "g", "r", "c", "m", "y", "b"]
+    for marker in ["o", "s"]]
+  for i in range(0, accuracies.shape[0]):
+    ax.plot(xvals, accuracies[i, :], color=cm[i][0], 
+      marker=cm[i][1], label=legends[i])
+  plt.grid()
+  plt.xlabel("The number of features")
+  plt.ylabel("Classification accuracy")
+  plt.title("The comparsion of accuracy and the number of features for different classifiers")
+  box = ax.get_position()
+  ax.set_position([box.x0, box.y0 + box.height * 0.3,
+    box.width, box.height * 0.7])
+  ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15),
+    fancybox=True, shadow=True, ncol=3)
+  plt.savefig('acc_vs_features.eps', format='eps', dpi=1000)  
+  plt.show()
+  
+def main():
+  X, y = load()
+
+  N_FEATURES = X.shape[-1]
+  nFeatures = np.arange(50, N_FEATURES,50)
+  clfs = [
+    BernoulliNB(),
+    GaussianNB(),
+    DecisionTreeClassifier(),
+    RandomForestClassifier(n_estimators=10),
+    OneVsRestClassifier(LinearSVC(random_state=0)),
+    OneVsRestClassifier(LogisticRegression()),
+    OneVsRestClassifier(SGDClassifier()),
+    OneVsRestClassifier(RidgeClassifier()),
+    KnnDtw(n_neighbors=2, max_warping_window=10),    
+  ]
+  clfnames = map(lambda x: type(x).__name__
+    if type(x).__name__ != 'OneVsRestClassifier'
+    else type(x.estimator).__name__, clfs)
+  scoreFuncs = [f_classif] # chi2 asserts the input is non-negative
+  accuracies = np.zeros((len(clfs), len(nFeatures), len(scoreFuncs)))
+  #plot_precision_recall_fscore(X, y, clfs, clfnames)
+  for k in range(0, len(scoreFuncs)):
+    Xtrunc = X.copy()
+    for j in range(0, len(nFeatures)):
+      if nFeatures[j] != N_FEATURES:
+        featureSelector = SelectKBest(score_func=scoreFuncs[k], k=nFeatures[j])
+        Xtrunc = featureSelector.fit_transform(X, y)
+      for i in range(0, len(clfs)):
+        accuracies[i, j, k],_ = evaluate(Xtrunc, y, N_FOLDS, clfs[i],
+          nFeatures[j], clfnames[i], scoreFuncs[k])
+  # print out accuracy matrix
+  for k in range(0, len(scoreFuncs)):
+    for i in range(0, len(clfs)):
+      print "%22s " % clfnames[i],
+      for j in range(0, accuracies.shape[1]):
+        print "%5.3f" % accuracies[i, j, k],
+      print
+    plot(accuracies[:, :, k], nFeatures, clfnames)
+
+if __name__ == "__main__":
+  main()

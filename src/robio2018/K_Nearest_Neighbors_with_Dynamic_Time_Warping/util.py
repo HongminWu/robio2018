@@ -179,7 +179,7 @@ class KnnDtw(object):
         mode_label = mode_data[0]
         mode_proba = mode_data[1]/self.n_neighbors
 
-        return mode_label.ravel(), mode_proba.ravel()
+        return mode_label.ravel()#, mode_proba.ravel()
 
 class ProgressBar:
     """This progress bar was taken from PYMC

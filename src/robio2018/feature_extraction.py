@@ -4,7 +4,6 @@ from tsfresh import extract_features, extract_relevant_features, select_features
 from tsfresh.utilities.dataframe_functions import impute
 from tsfresh.feature_extraction import ComprehensiveFCParameters, EfficientFCParameters
 import ipdb
-
 coloredlogs.install()
 
 def run():
@@ -14,10 +13,8 @@ def run():
     timeseries, y = load_csv_data_from_filtered_scheme.run()
     logger.info("successfully load the correct dataframe for tsfresh")
 
-    #extraction_setting = ComprehensiveFCParameters() # all features
-    #extraction_setting  = EfficientFCParameters # without the 'high_comp_cost' features
-
     # reference to the github code ./tsfresh/feature_extraction/settings.py
+
     extraction_setting = {
         "mean":None,
         "standard_deviation":None,
@@ -56,6 +53,9 @@ def run():
                            {"coeff":4, "attr":"angle"}],
         }
 
+    #extraction_setting = ComprehensiveFCParameters() # all features
+    #extraction_setting  = EfficientFCParameters() # without the 'high_comp_cost' features
+        
     X = extract_features(timeseries,
                          column_id = 'id',
                          column_sort = 'time',
@@ -63,12 +63,10 @@ def run():
                          impute_function=impute)
     logger.warning('Features Info:')
     print X.info()
-    
     X_filtered = extract_relevant_features(timeseries,
                                            y, column_id='id',
                                                column_sort='time',
                                                default_fc_parameters=extraction_setting)
-    
     logger.warning('Filtered features Info:')
     print X_filtered.info()
     print X_filtered.shape
