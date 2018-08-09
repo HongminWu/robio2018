@@ -3,7 +3,7 @@
 from __future__ import division
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.rcParams.update({'font.size':14})
+matplotlib.rcParams.update({'font.size':12})
 import numpy as np
 from sklearn.cross_validation import KFold
 from sklearn.ensemble import RandomForestClassifier
@@ -110,7 +110,8 @@ def plot_precision_recall_fscore(X, y, clfs, clfnames):
     plt.xlabel('Classifier')
     plt.xticks(xs, clfnames, rotation=30)
     plt.legend(bbox_to_anchor = (0., 1.02, 1.0, 0.102), loc=3, ncol=3, mode='expand', borderaxespad=0.)
-    plt.savefig('pre_rec_fsc_acc_by_classifiers.eps', format='eps', dpi=1000)
+    plt.savefig('pre_rec_fsc_acc_by_classifiers.eps', format='eps', dpi=300)
+    plt.savefig('pre_rec_fsc_acc_by_classifiers.png', format='png', dpi=300)
     plt.show()
     sys.exit()
 
@@ -147,7 +148,7 @@ def main():
     DecisionTreeClassifier(),
     RandomForestClassifier(n_estimators=10),
     OneVsRestClassifier(LinearSVC(random_state=0)),
-    OneVsRestClassifier(SVC(kernel='rbf', random_state=0)),    
+    #OneVsRestClassifier(SVC(kernel='rbf', random_state=0)),    
     OneVsRestClassifier(LogisticRegression()),
     OneVsRestClassifier(SGDClassifier()),
     OneVsRestClassifier(RidgeClassifier()),
@@ -158,7 +159,7 @@ def main():
     else type(x.estimator).__name__, clfs)
   scoreFuncs = [f_classif] # chi2 asserts the input is non-negative
   accuracies = np.zeros((len(clfs), len(nFeatures), len(scoreFuncs)))
-  #plot_precision_recall_fscore(X, y, clfs, clfnames)
+  plot_precision_recall_fscore(X, y, clfs, clfnames)
   for k in range(0, len(scoreFuncs)):
     Xtrunc = X.copy()
     for j in range(0, len(nFeatures)):
